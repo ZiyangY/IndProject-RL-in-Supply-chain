@@ -222,15 +222,19 @@ class InvManagementMasterEnv(gym.Env):
         self.action_log = np.zeros((periods, m-1))
         # set state
         self._update_state()
-        
         return self.state
 
     def _update_state(self):
+        #default 
+        
         m = self.num_stages - 1
         t = self.period
+        # print("-------------------update state --------------------------")
+        # print("self,T", self.T)
+        # print("self.I",self.I)
+        # print("-------------------update state --------------------------")
         lt_max = self.lead_time.max()
         state = np.zeros(m*(lt_max + 1))
-        # state = np.zeros(m)
         if t == 0:
             state[:m] = self.I0
         else:
@@ -238,10 +242,27 @@ class InvManagementMasterEnv(gym.Env):
 
         if t == 0:
             pass
-        elif t >= lt_max:
-            state[-m*lt_max:] += self.action_log[t-lt_max:t].flatten()
+        elif t >= lt_max: # 
+            state[-m*lt_max:] += self.action_log[t-lt_max:t].flatten() 
         else:
-            state[-m*(t):] += self.action_log[:t].flatten()
+            state[-m*(t):] += self.action_log[:t].flatten() 
+        
+        # #changed 
+        # m = self.num_stages - 1
+        # t = self.period
+        # state = np.zeros(m)
+        # if t == 0:
+        #     state[:m] = self.I0
+        # else:
+        #     state[:m] = self.I[t]
+
+        # used pipeline inventory as state
+        # state = self.T.ravel(order='F')
+        # print("self.T", state)
+        # the pipeline inventory total for each stage now.
+        # state = self.T[t]
+        # print(state)
+
 
         self.state = state.copy()
     
@@ -257,6 +278,9 @@ class InvManagementMasterEnv(gym.Env):
             IP = np.cumsum(self.I[n,:] + self.T[n,:] - self.B[n-1,:-1])
         else:
             IP = np.cumsum(self.I[n,:] + self.T[n,:])
+
+        # recontruct state vetor
+        # IP = self.T.ravel(order='F')
         self.state = IP
     
     def _STEP(self,action):
@@ -265,25 +289,17 @@ class InvManagementMasterEnv(gym.Env):
         action = [integer; dimension |Stages|-1] number of units to request from suppliers (last stage makes no requests)
         '''
         # changed
-        R = np.maximum(action, 0).astype(int)
-        #print(type(action))
+        # R = np.maximum(action, 0).astype(int)
         
-        # ranged_a = []
-        # range_num = 3 #number that each element scrized of.
-        # for i in action:
-        #     ranged_i = ((i/range_num).astype(int))*range_num
-        #     ranged_a.append(ranged_i)
-            #print(i,i/3,ranged_i)
-        #print("ranged_action:", type(ranged_a),ranged_a)
-        # R = np.maximum(ranged_a, 0)
-        #print("ranged_R:", ranged_R)
-        
+        ranged_a = []
+        range_num = 3 #number that each element scrized of.
+        for i in action:
+            ranged_i = ((i/range_num).astype(int))*range_num
+            ranged_a.append(ranged_i)
+        R = np.maximum(ranged_a, 0)
 
+        #R = np.maximum(action, 0)
 
-        # R = np.maximum(action, 0)
-        #print("real R:", R)
-        #print("---------------------------------------")
-        
         # get inventory at hand and pipeline inventory at beginning of the period
         n = self.period
         L = self.lead_time
@@ -304,7 +320,7 @@ class InvManagementMasterEnv(gym.Env):
         R[R>=c] = c[R>=c] # enforce capacity constraint
         R[R>=Im1] = Im1[R>=Im1] # enforce available inventory constraint
         self.R[n,:] = R # store R[n]
-        
+
         # receive inventory replenishment placed L periods ago
         RnL = np.zeros(m-1) # initialize
         for i in range(m-1):
@@ -362,24 +378,28 @@ class InvManagementMasterEnv(gym.Env):
         II = np.append(I,0) # augment inventory so that last has no onsite inventory
         RR = np.append(R,S[-1]) # augment replenishment orders to include production cost at last stage
         P = a**n*np.sum(p*S - (r*RR + k*U + h*II)) # discounted profit in period n
+
         # P = a**n*np.sum(p*S - (r*RR + k*U + h*I))
         self.P[n] = P # store P
-        
+
+
         # update period
         self.period += 1  
-        
         # update stae
         self._update_state()
         
         # set reward (profit from current timestep)
         reward = P 
         
+        #scale the reward
+        reward
+
+
         # determine if simulation should terminate
         if self.period >= self.num_periods:
             done = True
         else:
             done = False
-            
         return self.state, reward, done, {}
     
     def sample_action(self):
@@ -435,3 +455,13 @@ class InvManagementLostSalesEnv(InvManagementMasterEnv):
         self.observation_space = gym.spaces.Box(
             low=np.zeros(self.pipeline_length), # Never goes negative without backlog
             high=np.ones(self.pipeline_length)*self.supply_capacity.max()*self.num_periods, dtype=np.float32)
+
+        # reshaped state vector case
+        # self.observation_space = gym.spaces.Box(
+        #     low=np.zeros(3), # Never goes negative without backlog
+        #     high=np.ones(3)*self.supply_capacity.max()*self.num_periods, dtype=np.float32)
+
+        # pipeline inventory state vector case
+        # self.observation_space = gym.spaces.Box(
+        #     low=np.zeros(93), # Never goes negative without backlog
+        #     high=np.ones(93)*self.supply_capacity.max()*self.num_periods, dtype=np.float32)
