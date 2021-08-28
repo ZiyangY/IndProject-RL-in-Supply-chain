@@ -1,5 +1,5 @@
 # IndProject-RL-in-Supply-chain
 
-wolpertinger architecture based on DDPG support or-gym
-Changed or-gym envrionment package (inventory management file has been changed)
-runnable RNN + DDPG/PPO code
+Source code for implementing DRL in Inventory Management Problem (supported by OR-Gym). 
+
+OR-Gym: https://github.com/hubbs5/or-gym/tree/master/or_gym/envs

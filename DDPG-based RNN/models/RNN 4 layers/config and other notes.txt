@@ -1,0 +1,15 @@
+    configs = {
+        #state_dim  = state_dim for default state vector size, 3 for reshape, 93 for pipeline inventory
+        "state_dim": state_dim,
+        "action_dim": action_dim,
+        "max_action": max_action,
+        "hidden_dim": 256,
+        "discount": 0.99,
+        "tau": 0.0001,
+        "recurrent_actor": True,
+        "recurrent_critic": True,
+        "actor_lr":9e-6,
+        "critic_lr":2e-5,
+    }
+
+In general, it rarely perform well. It usually is in the range between 300- 400. Many episode even only have around 200-250 reward at the end of the learning. 

@@ -1,0 +1,13 @@
+    configs = {
+        #state_dim  = state_dim for default state vector size, 3 for reshape, 93 for pipeline inventory
+        "state_dim": state_dim,
+        "action_dim": action_dim,
+        "max_action": max_action,
+        "hidden_dim": 256,
+        "discount": 0.99,
+        "tau": 0.00001,
+        "recurrent_actor": True,
+        "recurrent_critic": True,
+        "actor_lr":2e-5,
+        "critic_lr":6e-5,
+    }
